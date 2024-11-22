@@ -1,0 +1,4 @@
+[2024-11-21 23:01:20,191][NOTICE][       smartdns.c:640 ] smartdns starting...(Copyright (C) Nick Peng <pymumu@gmail.com>, build: 1.2024.06.12-2222 (Release46))
+[2024-11-21 23:01:20,192][ INFO][     dns_server.c:9013] bind ip [::]:53, type 0
+[2024-11-21 23:01:20,192][ INFO][     dns_server.c:9330] IPV6 is ready, enable IPV6 features
+[2024-11-21 23:01:20,192][ INFO][     dns_client.c:1272] add server 10.10.10.9:53, type: udp
