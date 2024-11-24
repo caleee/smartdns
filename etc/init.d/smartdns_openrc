@@ -1,0 +1,36 @@
+#!/sbin/openrc-run
+
+command="/usr/sbin/smartdns"
+command_args="-c /etc/smartdns/smartdns.conf
+              -R"
+pidfile=/run/${RC_SVCNAME}.pid
+
+depend()
+{
+    need net
+    need localmount
+}
+
+start_pre()
+{
+    if [ ! -d "/run" ]; then
+        pidfile=/var/run/smartdns.pid
+    fi
+
+    test -x "${command}" || exit 5
+}
+
+start()
+{
+    default_start
+}
+
+stop()
+{
+    default_stop
+}
+
+status()
+{
+    default_status
+}
