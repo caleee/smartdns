@@ -88,6 +88,10 @@ restore() {
     restart_smartdns
 }
 
+if [ "$1" = "restore" ]; then
+    restore
+fi
+
 if [ "$ipv6" = "on" ]; then
     for i in "ipv4" "ipv6"; do
         cloudflarest $i
