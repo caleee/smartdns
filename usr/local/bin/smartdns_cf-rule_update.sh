@@ -18,6 +18,7 @@
 
 set -e
 
+ipv6="on"
 log_file="/var/log/smartdns/smartdns_cfip_update.log"
 dns_conf="/etc/smartdns/smartdns.conf"
 file_result="/tmp/cfst_result.csv"
@@ -41,7 +42,7 @@ cloudflarest() {
     log "INFO" "CloudflareST" "Start cloudflare IP speed test."
 
     file_out="$(mktemp)"
-    /root/bin/CloudflareST -n 1000 -t 10 -dn 50 -tl 200 -tlr 0.1 -sl 5 -p 50 -f /var/lib/smartdns/cloudflare-"$1".list -o "$file_out"
+    /usr/local/bin/CloudflareST -n 1000 -t 10 -dn 50 -tl 200 -tlr 0.1 -sl 5 -p 50 -f /var/lib/smartdns/cloudflare-"$1".list -o "$file_out"
     
     log "INFO" "CloudflareST" "Cloudflare IP speed test completed."
     log "INFO" "awk" "Cloudflare IP speed ranking data written to <$file_result>."
@@ -87,9 +88,14 @@ restore() {
     restart_smartdns
 }
 
-for i in "ipv4" "ipv6"; do
-    cloudflarest $i
-    alter_smartdns_conf $i
-done
+if [ "$ipv6" = "on" ]; then
+    for i in "ipv4" "ipv6"; do
+        cloudflarest $i
+        alter_smartdns_conf $i
+    done
+else
+    cloudflarest ipv4
+    alter_smartdns_conf ipv4
+fi
 
 restart_smartdns
