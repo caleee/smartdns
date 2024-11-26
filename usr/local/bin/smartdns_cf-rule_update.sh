@@ -4,12 +4,13 @@
 # Author: Cao Lei <caolei@mail.com>
 # Version:  \  Date:
 #   1.0.0   -    2024/11/25
+#   1.0.1   -    2024/11/26
 # Description: This script is used to write the preferred Cloudflare IP to the SmartDNS IP rules.
 # Usage: Run this script as root: `chmod +x smartdns_cf-rule_update.sh && sh smartdns_cf-rule_update.sh`
 # # If you need to restore the DNS configuration: `sh smartdns_cf-rule_update.sh restore`
 # Note: Ensure that you understand every command's behaviour and be careful when identifying large files
 #
-# For crontab(root): 0 6 * * * /bin/sh /usr/local/bin/smartdns_cf-rule_update.sh >/dev/null 2>>/var/log/smartdns/smartdns_cfip_update.log
+# For crontab(root): 0 6 * * * /bin/sh /usr/local/bin/smartdns_cf-rule_update.sh >/dev/null 2>&1
 #
 # # !!! Necessary services or software: 'sh' 'systemd or openrc' 'CloudflareST' 'awk' 'sed'
 # # !!! Necessary data or dir '/var/lib/smartdns/cloudflare-ipv4.list' '/var/lib/smartdns/cloudflare-ipv6.list' '/etc/smartdns/smartdns.conf-<cloudflare ip-rules>' '/var/log/smartdns/'
@@ -23,7 +24,7 @@ log_file="/var/log/smartdns/smartdns_cfip_update.log"
 dns_conf="/etc/smartdns/smartdns.conf"
 file_result="/tmp/cfst_result.csv"
 
-if [ -f $file_result ]; then
+if [ ! -f $file_result ]; then
     echo "IP 地址,已发送,已接收,丢包率,平均延迟,下载速度 (MB/s),时间" >$file_result
 fi
 
