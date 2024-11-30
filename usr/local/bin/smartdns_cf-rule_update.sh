@@ -6,6 +6,7 @@
 #   1.0.0   -    2024/11/25
 #   1.0.1   -    2024/11/26
 #   1.0.2   -    2024/11/28
+#   1.1.0   -    2024/11/30
 # Description: This script is used to write the preferred Cloudflare IP to the SmartDNS IP rules.
 # Usage: Run this script as root: `chmod +x smartdns_cf-rule_update.sh && sh smartdns_cf-rule_update.sh`
 # # If you need to restore the DNS configuration: `sh smartdns_cf-rule_update.sh restore`
@@ -20,25 +21,15 @@
 #
 
 # Function switch
-ipv6="on"
-frfile="no"
+ipv6="true"       # IPv6 support
+frfile="false"    # Formatted result file
+rotatelogs="true" # Rotate logs
 
 # Variables
 log_file="/var/log/smartdns/$(basename "$0").log"
 dns_conf="/etc/smartdns/smartdns.conf"
 result_file="/tmp/cfst_result.csv"
 temp_file="$(mktemp)"
-
-# Format result file
-format_result_file() {
-    if [ ! -f $result_file ]; then
-        echo "IP 地址,已发送,已接收,丢包率,平均延迟,下载速度 (MB/s),时间" >$result_file
-    fi
-}
-
-if [ $frfile = "yes" ]; then
-    format_result_file
-fi
 
 # Generate session id
 generate_session_id() {
@@ -58,6 +49,49 @@ log() {
     printf '"logger_name":"%s","command":"%s","line":"%s","session_id":"%s"}\n' \
         "$(basename "$0")" "$command" "$line_number" "$session_id" >>"$log_file"
 }
+
+# Rotate logs function
+rotate_logs() {
+    if [ ! -f "$log_file" ]; then
+        return
+    fi
+
+    current_size=$(wc -c <"$log_file")
+    max_size="$((1 * 1024 * 1024))"
+
+    if [ "$current_size" -lt "$max_size" ]; then
+        return
+    fi
+
+    log "INFO" "Rotate logs" "tar" "$LINENO"
+
+    tar -czf "${log_file}_$(date +%Y%m%d-%H%M%S).tar.gz" "$log_file" >/dev/null 2>&1 && : >"$log_file"
+
+    log_dir="$(dirname "$log_file")"
+    file_count="$(find "$log_dir" -maxdepth 1 -name 'smartdns.log*tar.gz' | wc -l)"
+    max_num="5"
+
+    if [ "$file_count" -gt "$max_num" ]; then
+        ls -tr "$log_dir"/smartdns.log*tar.gz 2>/dev/null | head -n "$((file_count - max_num))" | xargs rm -f
+        log "INFO" "Rotate log completed, cleaned $((file_count - max_num)) old files" "rm" "$LINENO"
+    fi
+}
+
+if [ "$rotatelogs" = "true" ]; then
+    rotate_logs
+fi
+
+# Format result file
+format_result_file() {
+    if [ ! -f $result_file ]; then
+        echo "IP 地址,已发送,已接收,丢包率,平均延迟,下载速度 (MB/s),时间" >$result_file
+    fi
+}
+
+if [ $frfile = "true" ]; then
+    log "INFO" "Format $result_file" "echo >" "$LINENO"
+    format_result_file
+fi
 
 # CloudflareST function
 cloudflarest() {
@@ -120,7 +154,7 @@ fi
 
 # Action
 main() {
-    if [ "$ipv6" = "on" ]; then
+    if [ "$ipv6" = "true" ]; then
         for i in "ipv4" "ipv6"; do
             cloudflarest $i
             alter_smartdns_conf $i
