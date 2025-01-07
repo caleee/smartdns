@@ -5,8 +5,9 @@
       - [Linux 安装 SmartDNS](#linux-安装-smartdns)
       - [Linux 安装 CloudflareSpeedTest](#linux-安装-cloudflarespeedtest)
       - [SmartDNS CF-IP 优选相关规则](#smartdns-cf-ip-优选相关规则)
-  - [脚本说明](#脚本说明)
-  - [计划任务](#计划任务)
+    - [脚本说明](#脚本说明)
+    - [计划任务](#计划任务)
+  - [域名名单更新脚本](#域名名单更新脚本)
 - [感谢:](#感谢)
 
 ## 当前项目中有价值的内容:
@@ -80,7 +81,7 @@ ip-set -name cloudflare-ipv6 -type list -file /var/lib/smartdns/cloudflare-ipv6.
 ip-rules ip-set:cloudflare-ipv6 -ip-alias 2400:cb00:2049::ad:8e46:3a27,2a06:98c1:310c::e943:e21a:fe89
 ```
 
-### 脚本说明
+#### 脚本说明
 
 - 理论上兼容常见的 Linux 发行版 (测试环境 PVE-lxc-alpine)
 - 脚本放在 `/usr/local/bin/smartdns_cf-rule_update.sh` 并附执行权限 `chmod +x /usr/local/bin/smartdns_cf-rule_update.sh `
@@ -93,19 +94,47 @@ ip-rules ip-set:cloudflare-ipv6 -ip-alias 2400:cb00:2049::ad:8e46:3a27,2a06:98c1
 - CloudflareSpeedTest 的 CloudflareST 工具参数很多, 到大佬的项目里自行翻阅(下面有链接), 脚本中设置测试IP数量很多(50+50), 大概需要20分钟, 如需定制自行修改
 - 注意: 脚本需要放在smartdns的服务器上执行, 还要注意服务器需求直连, 代理上网配置也要指定clouldflare cdn ip段直连, 否则改了smartdns配置也无用, 甚至是倒吸牙膏; 执意要 cf cdn 走代理的 CloudflareST 工具有相关参数, 自行研究
 
-### 计划任务
+#### 计划任务
 
 ```bash
 # 每日6:00执行一次
 crontab -e
-0 6 * * * /bin/sh /usr/local/bin/smartdns_cf-rule_update.sh >/dev/null 2>>/var/log/smartdns/smartdns_cfip_update.log
+0 6 * * * /bin/sh /usr/local/bin/smartdns_cf-rule_update.sh >/dev/null 2>&1
+```
+
+### 域名名单更新脚本
+
+**[脚本路径](usr/local/bin/smartdns_list_update.sh)**
+
+#### 脚本说明
+
+- 根据我使用的配置文件中的`domain-set`相关内容码的`list`升级脚本, 没有泛用性, 借鉴可以
+
+  ```bash
+  domain-set -name domestic-domain -type list -file /var/lib/smartdns/domestic-domain.list
+  domain-set -name oversea-domain -type list -file /var/lib/smartdns/oversea-domain.list
+  domain-set -name openai-domain -type list -file /var/lib/smartdns/openai-domain.list
+  
+  domain-rules /domain-set:domestic-domain/ -nameserver domestic -speed-check-mode ping,tcp:80,tcp:443
+  domain-rules /domain-set:oversea-domain/ -nameserver oversea -speed-check-mode none -address #6
+  domain-rules /domain-set:openai-domain/ -nameserver oversea -speed-check-mode none -address #6
+  ```
+
+#### 计划任务
+
+```bash
+# 每周周日2:00执行一次
+crontab -e
+0 2 * * 0 /bin/sh /usr/local/bin/smartdns-list-update.sh >/dev/null 2>&1
 ```
 
 ## 感谢: 
 
-**[smartdns](https://github.com/pymumu/smartdns)**
+@[pymumu](https://github.com/pymumu)/[smartdns](https://github.com/pymumu/smartdns)
 
-**[CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest)**
+@[XIU2](https://github.com/XIU2)/[CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest)
+
+@[jiange1236](https://github.com/jiange1236)/[smartdns-rules](https://github.com/jiange1236/smartdns-rules)
 
 ---
 
